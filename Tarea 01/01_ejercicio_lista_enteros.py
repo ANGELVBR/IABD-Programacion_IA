@@ -7,12 +7,12 @@
 """
 import sys
 
-def cleanList(numeros: list[int]) -> list[int]:
+def clean_list(numeros: list[int]) -> list[int]:
     """Return list of integer without negatives, without repeat  and with order asc."""
     return sorted({numero for numero in numeros if numero >= 0})
 
 
-def parserNumber(textParam: str) -> list[int]:
+def parser_number(textParam: str) -> list[int]:
     """Convert text type '3 -1 2, 2' to integer list."""
     textParam = textParam.replace(",", " ")
     numberList = []
@@ -26,12 +26,12 @@ def parserNumber(textParam: str) -> list[int]:
 
 def main() -> None:
     if len(sys.argv) > 1:
-        numbersInput = parserNumber(", ".join(sys.argv[1:]))
+        numbersInput = parser_number(", ".join(sys.argv[1:]))
     else:
         print("Write the number with blank space or with , (ej: 3 -1 2 2 7) or (3,-1,2,2,7)")
-        numbersInput = parserNumber(input("> "))
+        numbersInput = parser_number(input("> "))
 
-    result = cleanList(numbersInput)
+    result = clean_list(numbersInput)
     print(f"Input: {numbersInput}")
     print(f"Output : {result}")
 
