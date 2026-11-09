@@ -1,9 +1,12 @@
-"""Ejercicio: limpiar una lista de enteros.
+"""Problema 1: Procesamiento de una lista de enteros..
 
- Reglas:
- 1. Eliminar los números negativos.
- 2. Eliminar los repetidos (quedarse con una sola aparición).
- 3. Devolver los números ordenados de menor a mayor.
+    Crea una función que reciba una lista de enteros por parámetro y devuelva otra lista, de acuerdo a las siguientes acciones:
+
+    1. Eliminar los números negaƟvos de la lista.
+    2. Eliminar los valores que están repeƟdos, quedándonos con uno de ellos.
+    3. Ordenar los números resultantes de menor a mayor.
+
+Por ejemplo, si le pasara [4, -1, 2, 4, 3, -5, 2], debería retornar [2,3,4].
 """
 import sys
 

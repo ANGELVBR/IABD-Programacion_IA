@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Problem 2: word frequency in a text file.
+"""Problema 2: Frecuencia de palabras en un texto.
 
-Main function:
-    count_words(words, file_path) -> dict[str, int]
-
-Usage:
-    python3 frecuencia_palabras.py <file_path> <word> [<word> ...]
+Escribe una función que reciba por parámetro una lista de palabras y la ruta a
+un fichero de texto y devuelva un diccionario que muestre cuantas veces
+aparecen las disƟntas palabras de la lista en el fichero de texto. Haz un pequeño
+programa que la ponga a prueba.
 """
 
 import sys
@@ -81,12 +80,22 @@ def showAlert() -> None:
 def main() -> None:
     arguments = sys.argv[1:]
 
-    if len(arguments) < 2:
-        showAlert
+    if len(arguments) >= 2:
+        file_path = arguments[0]
+        words = arguments[1:]
+    elif not arguments:
+        print("Type the path of the file (e.g. 02_example_text.txt)")
+        file_path = input("> ").strip()
+        print("Type the list of the wore (e.g. viajero, anciano)")
+        words = input("> ").split()
+    else:
+        print(
+            f"Usage: python3 {sys.argv[0]} \"<path_of_file>\" \"<list_of_word>\"",
+            file=sys.stderr,
+        )
+        print(f"Example: python3 {sys.argv[0]} \"02_example_text.txt\" \"viajero, anciano\"", file=sys.stderr)
         raise SystemExit(1)
 
-    file_path = arguments[0]
-    words = arguments[1:]
 
     frequencies = count_words(words, file_path)
     show_result(frequencies, file_path)
