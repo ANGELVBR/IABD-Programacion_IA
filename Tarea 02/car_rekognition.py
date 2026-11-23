@@ -11,10 +11,11 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
 SUPPORTED_EXTENSIONS = (".jpg", ".jpeg", ".png")
-CAR_LABELS = {"Car", "Automobile"}
-MIN_LABEL_CONFIDENCE = 80.0
+CAR_LABELS = {"Car", "vehicle", "Automobile"}
+MIN_LABEL_CONFIDENCE = 90.0
 MAX_LABELS = 50
-DEFAULT_REGION = "eu-west-1"
+AWS_REGION = "us-east-1"
+MIN_TEXT_CONFIDENCE = 90.0
 MAX_LOCAL_IMAGE_BYTES = 5 * 1024 * 1024  # Rekognition limit for inline image bytes
 
 
@@ -43,15 +44,6 @@ def list_s3_keys(s3, bucket, prefix):
     return sorted(keys)
 
 
-def get_bucket_region(s3, bucket):
-    location = s3.get_bucket_location(Bucket=bucket)["LocationConstraint"]
-    if location is None:
-        return "us-east-1"
-    if location == "EU":  # Legacy value meaning eu-west-1
-        return "eu-west-1"
-    return location
-
-
 def read_local_image(path):
     if os.path.getsize(path) > MAX_LOCAL_IMAGE_BYTES:
         raise ValueError("image exceeds the 5 MB limit for inline bytes")
@@ -68,24 +60,22 @@ def prepare_source(source):
     """Return a Rekognition client and a list of (display_name, image_reference) pairs."""
     if source.lower().startswith("s3://"):
         bucket, prefix = parse_s3_uri(source)
-        s3 = boto3.client("s3")
-        rekognition = boto3.client("rekognition", region_name=get_bucket_region(s3, bucket))
+        s3 = boto3.client("s3", region_name=AWS_REGION)
+        rekognition = boto3.client("rekognition", region_name=AWS_REGION)
         items = [(key, {"S3Object": {"Bucket": bucket, "Name": key}})
                  for key in list_s3_keys(s3, bucket, prefix)]
         return rekognition, items
 
     if not os.path.isdir(source):
         raise ValueError(f"'{source}' is not a valid local folder")
-    rekognition = boto3.client("rekognition",
-                               region_name=os.environ.get("AWS_REGION", DEFAULT_REGION))
+    rekognition = boto3.client("rekognition", region_name=AWS_REGION)
     items = [(os.path.basename(path), path) for path in list_local_images(source)]
     return rekognition, items
 
 
 def detect_car_confidence(rekognition, image):
     """Return the highest confidence for a car label, or None if no car is detected."""
-    response = rekognition.detect_labels(Image=image, MaxLabels=MAX_LABELS,
-                                         MinConfidence=MIN_LABEL_CONFIDENCE)
+    response = rekognition.detect_labels(Image=image, MaxLabels=MAX_LABELS,MinConfidence=MIN_LABEL_CONFIDENCE)
     confidences = [label["Confidence"] for label in response["Labels"]
                    if label["Name"] in CAR_LABELS]
     return max(confidences, default=None)
@@ -93,14 +83,14 @@ def detect_car_confidence(rekognition, image):
 
 def looks_like_plate(text):
     # Heuristic: plates mix digits and letters and have a typical length.
-    return 4 <= len(text) <= 8 and any(c.isdigit() for c in text) and any(c.isalpha() for c in text)
+    return 5 <= len(text) <= 10 and any(c.isdigit() for c in text) and any(c.isalpha() for c in text)
 
 
 def find_plate_candidates(rekognition, image):
     response = rekognition.detect_text(Image=image)
     candidates = []
     for detection in response["TextDetections"]:
-        if detection["Type"] != "LINE":
+        if detection["Type"] != "LINE" or detection["Confidence"] <= MIN_TEXT_CONFIDENCE:
             continue
         normalized = re.sub(r"[^A-Z0-9]", "", detection["DetectedText"].upper())
         if looks_like_plate(normalized):
